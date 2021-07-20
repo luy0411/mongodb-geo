@@ -11,4 +11,9 @@ public class PartnerWithDistance extends PartnerDocument {
     public void setDistance(final Double distance) {
         this.distance = distance;
     }
+
+    @Override
+    public String toString() {
+        return getTradingName();
+    }
 }

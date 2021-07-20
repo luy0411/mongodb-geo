@@ -8,6 +8,7 @@ import org.springframework.data.geo.Point;
 import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.data.mongodb.core.aggregation.Aggregation;
 import org.springframework.data.mongodb.core.aggregation.AggregationResults;
+import org.springframework.data.mongodb.core.aggregation.GeoNearOperation;
 import org.springframework.data.mongodb.core.geo.GeoJsonPoint;
 import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.mongodb.core.query.NearQuery;
@@ -22,6 +23,9 @@ import static org.springframework.data.mongodb.core.aggregation.Aggregation.newA
 @Component
 public class PartnerRepositoryImpl implements PartnerGeoQuery {
 
+    private static final String DISTANCE_FIELD = "distance";
+    private static final String INTERSECT_FIELD = "coverageArea";
+
     private MongoTemplate mongoTemplate;
 
     @Autowired
@@ -32,9 +36,10 @@ public class PartnerRepositoryImpl implements PartnerGeoQuery {
     public List<PartnerWithDistance> findCloserPartnersTo(final Point point,
                                                           final Distance distance) {
         final NearQuery nearQuery = createNearQuery(point, distance);
-        final Aggregation a = newAggregation(geoNear(nearQuery, "distance"));
+        final GeoNearOperation geoNearOperation = geoNear(nearQuery, DISTANCE_FIELD);
+        final Aggregation aggregation = newAggregation(geoNearOperation);
         final AggregationResults<PartnerWithDistance> results =
-                mongoTemplate.aggregate(a, PartnerDocument.class, PartnerWithDistance.class);
+                mongoTemplate.aggregate(aggregation, PartnerDocument.class, PartnerWithDistance.class);
 
         return results.getMappedResults();
     }
@@ -49,7 +54,7 @@ public class PartnerRepositoryImpl implements PartnerGeoQuery {
     }
 
     private Query createIntersectQuery(final Point point) {
-        return Query.query(Criteria.where("coverageArea").intersects(new GeoJsonPoint(point)));
+        return Query.query(Criteria.where(INTERSECT_FIELD).intersects(new GeoJsonPoint(point)));
     }
 
 }
